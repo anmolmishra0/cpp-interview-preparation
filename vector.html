@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Vector - Principal Level Interview Notes</title>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 950px; margin: 40px auto; padding: 0 20px; color: #222; }
+h1, h2, h3 { color: #17365d; }
+pre { background: #f4f4f4; padding: 14px; border-radius: 6px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+.note { background: #eef6ff; border-left: 4px solid #357edd; padding: 12px 16px; margin: 16px 0; }
+.warning { background: #fff4e5; border-left: 4px solid #e69500; padding: 12px 16px; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background: #eee; }
+</style>
+</head>
+<body>
+
+<h1>C++ std::vector — Principal-Level Interview Notes</h1>
+
+<h2>1. Vector Mental Model</h2>
+<p><code>std::vector&lt;T&gt;</code> is a contiguous dynamic array.</p>
+<pre>
+vector
+ ┌───────────────┐
+ │ data pointer  │ ──────► [ T ][ T ][ T ][ T ][ ... ]
+ ├───────────────┤
+ │ size          │
+ ├───────────────┤
+ │ capacity      │
+ └───────────────┘
+</pre>
+<ul>
+<li><b>size()</b> — number of constructed elements</li>
+<li><b>capacity()</b> — number of elements that can be stored before reallocation</li>
+<li><b>data()</b> — pointer to contiguous element storage</li>
+</ul>
+
+<h2>2. Vector Constructors — C++11/C++14</h2>
+
+<h3>Empty vector</h3>
+<pre>std::vector&lt;int&gt; v;</pre>
+
+<h3>Size constructor</h3>
+<pre>std::vector&lt;int&gt; v(5);</pre>
+<p>Creates 5 value-initialized integers: <code>0 0 0 0 0</code>.</p>
+
+<h3>Size + value</h3>
+<pre>std::vector&lt;int&gt; v(5, 10);</pre>
+<p>Creates: <code>10 10 10 10 10</code>.</p>
+
+<h3>Initializer-list constructor — C++11</h3>
+<pre>std::vector&lt;int&gt; v{1, 2, 3, 4, 5};</pre>
+
+<p>Important difference:</p>
+<pre>
+std::vector&lt;int&gt; a(5, 10);   // 10 10 10 10 10
+std::vector&lt;int&gt; b{5, 10};   // 5 10
+</pre>
+
+<h3>Iterator-range constructor</h3>
+<pre>
+int arr[] = {1, 2, 3, 4};
+std::vector&lt;int&gt; v(arr, arr + 4);
+</pre>
+
+<h3>Copy constructor</h3>
+<pre>
+std::vector&lt;int&gt; a{1,2,3};
+std::vector&lt;int&gt; b(a);
+</pre>
+
+<h3>Move constructor — C++11</h3>
+<pre>
+std::vector&lt;int&gt; a{1,2,3};
+std::vector&lt;int&gt; b(std::move(a));
+</pre>
+<p>Typically, the destination takes ownership of the source vector's allocated buffer. The moved-from vector remains valid but has an unspecified state.</p>
+
+<h2>3. Important Vector Functions</h2>
+<table>
+<tr><th>Function</th><th>Purpose</th><th>Typical Complexity</th></tr>
+<tr><td>size()</td><td>Number of elements</td><td>O(1)</td></tr>
+<tr><td>capacity()</td><td>Allocated capacity</td><td>O(1)</td></tr>
+<tr><td>empty()</td><td>Check whether empty</td><td>O(1)</td></tr>
+<tr><td>data()</td><td>Pointer to contiguous data</td><td>O(1)</td></tr>
+<tr><td>operator[]</td><td>Unchecked element access</td><td>O(1)</td></tr>
+<tr><td>at()</td><td>Bounds-checked access</td><td>O(1)</td></tr>
+<tr><td>front()</td><td>First element</td><td>O(1)</td></tr>
+<tr><td>back()</td><td>Last element</td><td>O(1)</td></tr>
+<tr><td>push_back()</td><td>Add at end</td><td>Amortized O(1)</td></tr>
+<tr><td>emplace_back()</td><td>Construct at end</td><td>Amortized O(1)</td></tr>
+<tr><td>pop_back()</td><td>Remove last</td><td>O(1)</td></tr>
+<tr><td>insert()</td><td>Insert element(s)</td><td>O(n)</td></tr>
+<tr><td>erase()</td><td>Remove element(s)</td><td>O(n)</td></tr>
+<tr><td>clear()</td><td>Remove all elements</td><td>O(n)</td></tr>
+<tr><td>reserve()</td><td>Increase capacity</td><td>O(n) if reallocation occurs</td></tr>
+<tr><td>resize()</td><td>Change size</td><td>O(n)</td></tr>
+<tr><td>shrink_to_fit()</td><td>Non-binding request to reduce capacity</td><td>Implementation dependent</td></tr>
+<tr><td>swap()</td><td>Exchange vectors</td><td>O(1) typically</td></tr>
+</table>
+
+<h2>4. reserve() vs resize()</h2>
+<pre>
+std::vector&lt;int&gt; v;
+
+v.reserve(100);
+// size == 0
+// capacity &gt;= 100
+
+v.resize(100);
+// size == 100
+</pre>
+<div class="note"><b>Remember:</b> reserve() prepares memory; resize() changes the number of elements.</div>
+
+<h2>5. push_back() vs emplace_back()</h2>
+<pre>
+std::vector&lt;std::string&gt; v;
+
+v.push_back("hello");
+v.emplace_back("hello");
+</pre>
+<p><code>emplace_back()</code> constructs the object in the vector using constructor arguments. Do not claim that it is always faster; the benefit depends on the type and expression.</p>
+
+<h2>6. What Happens When push_back() Causes Reallocation?</h2>
+<p>If capacity is exhausted, vector generally:</p>
+<ol>
+<li>Allocates a larger memory block.</li>
+<li>Moves or copies existing elements.</li>
+<li>Constructs the new element.</li>
+<li>Destroys old elements when required.</li>
+<li>Releases the old storage.</li>
+<li>Updates its internal state.</li>
+</ol>
+
+<p>Therefore an individual push_back() can be O(n), while repeated push_back() is amortized O(1).</p>
+
+<h2>7. Why Is push_back() Amortized O(1)?</h2>
+<p>Vector implementations generally grow geometrically. The standard does not require a particular growth factor.</p>
+<pre>
+1 + 2 + 4 + 8 + ... + n = O(n)
+
+n insertions = O(n) total work
+Average per insertion = O(1)
+</pre>
+
+<h2>8. Cache Locality</h2>
+<p>Vector stores elements contiguously:</p>
+<pre>
+[10][20][30][40][50]
+</pre>
+<p>When the CPU fetches a cache line containing one element, nearby elements are likely to be fetched too. Sequential traversal can therefore make efficient use of CPU caches.</p>
+
+<p>A list typically stores elements in separately allocated nodes that may be scattered in memory, resulting in pointer chasing and potentially more cache misses.</p>
+
+<div class="note">
+<b>Principal-level point:</b> Big-O is not the whole performance story. Cache locality, allocation overhead, pointer chasing, memory footprint, and branch behavior can strongly affect real-world performance.
+</div>
+
+<h2>9. Pointer / Iterator Invalidation</h2>
+<p>Consider:</p>
+<pre>
+std::vector&lt;int&gt; v{1,2,3};
+
+auto p = &amp;v[0];
+
+v.push_back(4);
+
+std::cout &lt;&lt; *p;
+</pre>
+
+<h3>Case 1: Reallocation occurs</h3>
+<pre>
+Old memory:
+[1][2][3]   &lt;-- p
+
+New memory:
+[1][2][3][4]
+</pre>
+<p>The old storage is released. <code>p</code> becomes a dangling pointer. Dereferencing it is <b>undefined behavior</b>.</p>
+
+<h3>Case 2: No reallocation</h3>
+<pre>
+size     = 3
+capacity = 5
+</pre>
+<p>The fourth element can use existing storage:</p>
+<pre>
+[1][2][3][4][ ]
+ ↑
+ p
+</pre>
+<p>Here <code>p</code> remains valid and dereferencing it gives <code>1</code>.</p>
+
+<div class="warning">
+<b>Interview answer:</b> Do not simply say the program prints 1. The correct answer is that the result depends on whether push_back() reallocates. If reallocation occurs, dereferencing p is undefined behavior.
+</div>
+
+<h2>10. Making the Above Example Safe</h2>
+<pre>
+std::vector&lt;int&gt; v{1,2,3};
+
+v.reserve(4);
+
+auto p = &amp;v[0];
+
+v.push_back(4);
+
+std::cout &lt;&lt; *p;   // safe for this push_back
+</pre>
+<p><code>reserve(4)</code> prevents reallocation for this particular insertion. However, insertions and erasures have their own invalidation rules.</p>
+
+<h2>11. erase() and the Erase-Remove Idiom</h2>
+<pre>
+v.erase(
+    std::remove_if(v.begin(), v.end(),
+                   [](int x) {
+                       return x &lt; 0;
+                   }),
+    v.end()
+);
+</pre>
+<p><code>remove_if()</code> rearranges the elements and returns a new logical end; <code>erase()</code> removes the unwanted tail.</p>
+
+<h2>12. clear()</h2>
+<pre>
+std::vector&lt;int&gt; v{1,2,3,4,5};
+
+v.clear();
+</pre>
+<p>After <code>clear()</code>, size becomes zero. Capacity is not required to decrease.</p>
+
+<h2>13. shrink_to_fit()</h2>
+<pre>v.shrink_to_fit();</pre>
+<p>This is a <b>non-binding request</b>. The implementation is allowed not to reduce capacity.</p>
+
+<h2>14. operator[] vs at()</h2>
+<pre>
+v[10];       // no bounds checking
+
+v.at(10);    // bounds checking; throws std::out_of_range if invalid
+</pre>
+
+<h2>15. vector&lt;bool&gt;</h2>
+<p><code>std::vector&lt;bool&gt;</code> is a special library specialization designed to pack boolean values efficiently, so it does not behave exactly like an ordinary <code>vector&lt;T&gt;</code>.</p>
+
+<h2>16. Why vector Often Beats list</h2>
+<p>Even though a list can provide O(1) insertion when an iterator to the insertion point is already available, vector often performs better for practical workloads because of:</p>
+<ul>
+<li>contiguous memory</li>
+<li>better cache locality</li>
+<li>fewer pointer indirections</li>
+<li>lower allocation overhead</li>
+<li>better sequential traversal</li>
+</ul>
+
+<h2>17. noexcept, Move and Vector Reallocation</h2>
+<p>During vector reallocation, existing elements may need to be moved or copied. A noexcept move constructor is valuable because it allows vector to safely prefer moving in situations where exception guarantees matter.</p>
+<pre>
+class Data {
+public:
+    Data(Data&amp;&amp;) noexcept;
+};
+</pre>
+
+<h2>18. Important C++11 Features</h2>
+<ul>
+<li>initializer-list construction</li>
+<li>move construction and move assignment</li>
+<li>emplace()</li>
+<li>emplace_back()</li>
+<li>cbegin()/cend()</li>
+<li>crbegin()/crend()</li>
+<li>data()</li>
+<li>range-based for loops</li>
+</ul>
+
+<h2>19. C++14</h2>
+<p>C++14 did not introduce a major new group of vector APIs comparable to the C++11 additions. For C++14 interviews, focus on understanding the C++11 vector features and the language/library improvements around them.</p>
+
+<h2>20. Principal-Level Questions to Practice</h2>
+<ol>
+<li>Why is push_back() amortized O(1)?</li>
+<li>What exactly happens during vector reallocation?</li>
+<li>What is the difference between reserve() and resize()?</li>
+<li>When does push_back() invalidate iterators, references and pointers?</li>
+<li>When does erase() invalidate iterators?</li>
+<li>Why can vector outperform list despite list's O(1) insertion?</li>
+<li>Explain vector + move constructor + noexcept + exception safety.</li>
+<li>What happens when a pointer to v[0] is retained across push_back()?</li>
+<li>Why is vector&lt;bool&gt; special?</li>
+<li>For millions of objects appended and later processed sequentially, how would you choose between vector, list and deque?</li>
+</ol>
+
+</body>
+</html>
